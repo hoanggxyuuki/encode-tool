@@ -1,53 +1,26 @@
-// RSA Decryption
-const rsaDecrypt = (encryptedMessage, privateKey) => {
+// Function to decrypt using RSA algorithm
+const decrypt = (encryptedMessage, privateKey) => {
   const { d, n } = privateKey;
-  return encryptedMessage.map(num => {
-    let result = 1;
+  
+  // Decrypt each number using the formula: m = c^d mod n
+  return encryptedMessage.map(c => {
+    let m = 1;
     for (let i = 0; i < d; i++) {
-      result = (result * num) % n;
+      m = (m * c) % n;
     }
-    return String.fromCharCode(result);
+    return String.fromCharCode(m);
   }).join('');
 };
 
-// Caesar Cipher Decryption
-const caesarDecrypt = (text, shift) => {
-  return text
-    .split('')
-    .map(char => {
-      if (char.match(/[a-z]/i)) {
-        const code = char.charCodeAt(0);
-        const isUpperCase = code >= 65 && code <= 90;
-        const base = isUpperCase ? 65 : 97;
-        return String.fromCharCode(((code - base - shift + 26) % 26) + base);
-      }
-      return char;
-    })
-    .join('');
-};
-
-// Base64 Decoding
-const base64Decode = (encodedText) => {
-  try {
-    return atob(encodedText);
-  } catch (e) {
-    throw new Error('Invalid Base64 string');
+// Example decryption function for demonstration
+const decryptExample = (c, d, n) => {
+  // Example: c = 855, d = 413, n = 3233
+  // Should return 123
+  let m = 1;
+  for (let i = 0; i < d; i++) {
+    m = (m * c) % n;
   }
+  return m;
 };
 
-// AES Decryption
-const aesDecrypt = (encryptedData, key) => {
-  // This is a simplified version for demo
-  const result = [];
-  for (let i = 0; i < encryptedData.length; i++) {
-    result.push(String.fromCharCode(encryptedData[i] ^ key.charCodeAt(i % key.length)));
-  }
-  return result.join('');
-};
-
-export {
-  rsaDecrypt,
-  caesarDecrypt,
-  base64Decode,
-  aesDecrypt
-};
+export { decrypt, decryptExample };

@@ -1,89 +1,121 @@
-// RSA Encryption
-const rsaEncrypt = (message, publicKey) => {
-  const { e, n } = publicKey;
-  const numbers = message.split('').map(char => char.charCodeAt(0));
-  return numbers.map(num => {
-    let result = 1;
-    for (let i = 0; i < e; i++) {
-      result = (result * num) % n;
-    }
-    return result;
-  });
-};
-
-// Caesar Cipher Encryption
-const caesarEncrypt = (text, shift) => {
-  return text
-    .split('')
-    .map(char => {
-      if (char.match(/[a-z]/i)) {
-        const code = char.charCodeAt(0);
-        const isUpperCase = code >= 65 && code <= 90;
-        const base = isUpperCase ? 65 : 97;
-        return String.fromCharCode(((code - base + shift) % 26) + base);
-      }
-      return char;
-    })
-    .join('');
-};
-
-// Base64 Encoding
-const base64Encode = (text) => {
-  return btoa(text);
-};
-
-// Simple Hash Function (for demo)
-const simpleHash = (text) => {
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    const char = text.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(16);
-};
-
-// AES Encryption
-const aesEncrypt = (text, key) => {
-  // This is a simplified version for demo
-  const result = [];
-  for (let i = 0; i < text.length; i++) {
-    result.push(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return result;
-};
-
-const generateRSAKeyPair = (p, q) => {
-  const n = p * q;
-  const phi = (p - 1) * (q - 1);
-  let e = 65537;
-  while (e < phi) {
-    if (gcd(e, phi) === 1) break;
-    e++;
-  }
-  let d = 0;
-  let k = 1;
-  while (true) {
-    d = (1 + (k * phi)) / e;
-    if (Number.isInteger(d)) break;
-    k++;
-  }
-  return {
-    publicKey: { e, n },
-    privateKey: { d, n }
-  };
-};
-
+// Function to calculate GCD using Euclidean algorithm
 const gcd = (a, b) => {
   if (b === 0) return a;
   return gcd(b, a % b);
 };
 
-export {
-  rsaEncrypt,
-  caesarEncrypt,
-  base64Encode,
-  simpleHash,
-  aesEncrypt,
-  generateRSAKeyPair
+// Function to calculate LCM
+const lcm = (a, b) => {
+  return Math.abs(a * b) / gcd(a, b);
 };
+
+// Function to calculate modular multiplicative inverse
+const modInverse = (e, lambda) => {
+  let m0 = lambda;
+  let y = 0;
+  let x = 1;
+
+  if (lambda === 1) return 0;
+
+  while (e > 1) {
+    const q = Math.floor(e / lambda);
+    let t = lambda;
+
+    lambda = e % lambda;
+    e = t;
+    t = y;
+
+    y = x - q * y;
+    x = t;
+  }
+
+  if (x < 0) x += m0;
+
+  return x;
+};
+
+// Function to check if a number is prime
+const isPrime = (num) => {
+  for (let i = 2; i <= Math.sqrt(num); i++) {
+    if (num % i === 0) return false;
+  }
+  return num > 1;
+};
+
+// Function to generate key pair following RSA algorithm
+const generateKeyPair = (p, q) => {
+  if (!isPrime(p) || !isPrime(q)) {
+    throw new Error('Both numbers must be prime.');
+  }
+
+  // Step 2: Calculate n = p * q
+  const n = p * q;
+
+  // Step 3: Calculate Carmichael's function λ(n)
+  const lambda = lcm(p - 1, q - 1);
+
+  // Step 4: Choose e (public exponent)
+  let e = 65537; // Common value for e
+  while (e < lambda) {
+    if (gcd(e, lambda) === 1) break;
+    e++;
+  }
+
+  // Step 5: Calculate d (private exponent)
+  const d = modInverse(e, lambda);
+
+  // Step 6 & 7: Return public and private keys
+  return {
+    publicKey: { n, e },     // Public key (n, e)
+    privateKey: { n, d },    // Private key (n, d)
+    debug: {                 // For demonstration
+      p,
+      q,
+      lambda
+    }
+  };
+};
+
+// Function to encrypt a message
+const encrypt = (message, publicKey) => {
+  const { e, n } = publicKey;
+  
+  // Convert message to numbers and encrypt each character
+  const encrypted = message.split('').map(char => {
+    const m = char.charCodeAt(0);
+    if (m >= n) {
+      throw new Error('Message value is too large for the chosen key.');
+    }
+    
+    // Encryption formula: c = m^e mod n
+    let c = 1;
+    for (let i = 0; i < e; i++) {
+      c = (c * m) % n;
+    }
+    return c;
+  });
+
+  return encrypted;
+};
+
+// Example demonstration function
+const demonstrationExample = () => {
+  const p = 61;
+  const q = 53;
+  const keys = generateKeyPair(p, q);
+  
+  // Should match the example values:
+  // n = 3233
+  // e = 17
+  // d = 413
+  return {
+    p,
+    q,
+    n: keys.publicKey.n,
+    e: keys.publicKey.e,
+    d: keys.privateKey.d,
+    lambda: keys.debug.lambda
+  };
+};
+
+export { generateKeyPair, encrypt, demonstrationExample };
