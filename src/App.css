@@ -3,8 +3,10 @@
   --primary-light: #818cf8;
   --primary-dark: #4f46e5;
   --success: #22c55e;
+  --error: #ef4444;
+  --error-light: #fee2e2;
   --background: #f8fafc;
-  --card: #ffffff;
+  --card: rgb(255, 255, 255);
   --text: #1e293b;
   --text-light: #64748b;
   --border: #e2e8f0;
@@ -59,6 +61,74 @@ h3 {
   margin-bottom: 1rem;
 }
 
+h4 {
+  color: var(--text-light);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Input Section */
+.input-section {
+  background: var(--card);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  
+}
+
+.input-with-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.input-error {
+  color: var(--error);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+input.error {
+  border-color: var(--error);
+  background-color: var(--error-light);
+}
+
+/* Prime Suggestions */
+.prime-suggestions {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.prime-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.prime-number {
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.prime-number:hover {
+  background: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
 /* Process Steps */
 .process-steps {
   display: flex;
@@ -71,11 +141,13 @@ h3 {
   border-radius: 12px;
   padding: 2rem;
   transition: all 0.3s ease;
+  opacity: 0.7;
 }
 
 .step.active {
   background: var(--card);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  opacity: 1;
 }
 
 .step-content {
@@ -155,6 +227,31 @@ input:focus, textarea:focus {
   margin-bottom: 0.5rem;
 }
 
+/* Buttons */
+button {
+  background: linear-gradient(to right, var(--primary), var(--primary-light));
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Example Section */
 .example-section {
   background: var(--card);
@@ -166,19 +263,6 @@ input:focus, textarea:focus {
 
 .example-button {
   background: linear-gradient(to right, var(--primary), var(--primary-light));
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.example-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .example-content {
@@ -204,34 +288,10 @@ input:focus, textarea:focus {
   border-bottom: none;
 }
 
-/* Buttons */
-button {
-  background: linear-gradient(to right, var(--primary), var(--primary-light));
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
 /* Error Display */
 .error {
-  color: #dc3545;
-  background-color: #f8d7da;
+  color: var(--error);
+  background-color: var(--error-light);
   padding: 1rem;
   border-radius: 8px;
   margin-top: 1rem;
@@ -239,10 +299,16 @@ button:disabled {
   animation: shake 0.5s ease-in-out;
 }
 
+/* Animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Responsive Design */
@@ -269,6 +335,15 @@ button:disabled {
   
   .input-group {
     flex-direction: column;
+  }
+
+  .prime-numbers {
+    gap: 0.25rem;
+  }
+
+  .prime-number {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 
