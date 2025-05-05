@@ -53,4 +53,41 @@ const decryptExample = (c, d, n) => {
   return m;
 };
 
-export { decrypt, decryptExample };
+// Hàm đo hiệu suất giải mã
+const measureDecryption = (encryptedMessage, privateKey, iterations = 10) => {
+  if (!encryptedMessage || !Array.isArray(encryptedMessage) || !privateKey) {
+    return { error: 'Vui lòng cung cấp thông điệp mã hóa và khóa bí mật' };
+  }
+
+  const results = [];
+  let totalTime = 0;
+  let decrypted;
+
+  try {
+    for (let i = 0; i < iterations; i++) {
+      const startTime = performance.now();
+      decrypted = decrypt(encryptedMessage, privateKey);
+      const endTime = performance.now();
+      
+      const elapsedTime = endTime - startTime;
+      results.push(elapsedTime);
+      totalTime += elapsedTime;
+    }
+
+    return {
+      averageTime: totalTime / iterations,
+      minTime: Math.min(...results),
+      maxTime: Math.max(...results),
+      totalTime,
+      iterations,
+      messageLength: encryptedMessage.length,
+      keySize: privateKey.n,
+      results,
+      decrypted // Trả về kết quả giải mã
+    };
+  } catch (err) {
+    return { error: err.message };
+  }
+};
+
+export { decrypt, decryptExample, measureDecryption };

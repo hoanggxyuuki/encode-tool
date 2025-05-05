@@ -205,4 +205,41 @@ const measureKeyGeneration = (p, q, iterations = 10) => {
   };
 };
 
-export { generateKeyPair, encrypt, demonstrationExample, measureKeyGeneration };
+// Hàm đo hiệu suất mã hóa
+const measureEncryption = (message, publicKey, iterations = 10) => {
+  if (!message || !publicKey) {
+    return { error: 'Vui lòng cung cấp thông điệp và khóa công khai' };
+  }
+
+  const results = [];
+  let totalTime = 0;
+  let encrypted;
+
+  try {
+    for (let i = 0; i < iterations; i++) {
+      const startTime = performance.now();
+      encrypted = encrypt(message, publicKey);
+      const endTime = performance.now();
+      
+      const elapsedTime = endTime - startTime;
+      results.push(elapsedTime);
+      totalTime += elapsedTime;
+    }
+
+    return {
+      averageTime: totalTime / iterations,
+      minTime: Math.min(...results),
+      maxTime: Math.max(...results),
+      totalTime,
+      iterations,
+      messageLength: message.length,
+      keySize: publicKey.n,
+      results,
+      encrypted // Trả về kết quả mã hóa để có thể sử dụng cho việc giải mã sau này
+    };
+  } catch (err) {
+    return { error: err.message };
+  }
+};
+
+export { generateKeyPair, encrypt, demonstrationExample, measureKeyGeneration, measureEncryption };

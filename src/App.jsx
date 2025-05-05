@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { generateKeyPair, encrypt, demonstrationExample } from './dictionary/encrypt';
-import { decrypt } from './dictionary/decrypt';
+import { generateKeyPair, encrypt, demonstrationExample, measureKeyGeneration, measureEncryption } from './dictionary/encrypt';
+import { decrypt, measureDecryption } from './dictionary/decrypt';
 import './App.css';
 
 function App() {
@@ -38,6 +38,17 @@ function App() {
   const [manualKeyN, setManualKeyN] = useState('');
   const [manualKeyD, setManualKeyD] = useState('');
   const [manualKeyError, setManualKeyError] = useState('');
+
+  // Performance evaluation states
+  const [performanceResults, setPerformanceResults] = useState({
+    keyGen: null,
+    encryption: null,
+    decryption: null
+  });
+  const [performanceError, setPerformanceError] = useState('');
+  const [iterations, setIterations] = useState(10);
+  const [benchmarkType, setBenchmarkType] = useState('all'); // 'keyGen', 'encrypt', 'decrypt', 'all'
+  const [runningBenchmark, setRunningBenchmark] = useState(false);
 
   const suggestedPrimes = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 
@@ -250,6 +261,69 @@ function App() {
     });
     setDecryptedMessage('');
     setDecryptError('');
+  };
+
+  // Hàm thực hiện đánh giá hiệu suất
+  const runPerformanceBenchmark = () => {
+    if (!keyPair && (benchmarkType === 'all' || benchmarkType === 'encrypt' || benchmarkType === 'decrypt')) {
+      setPerformanceError('Vui lòng sinh khóa trước khi đánh giá hiệu suất');
+      return;
+    }
+
+    if ((benchmarkType === 'encrypt' || benchmarkType === 'all') && !message.trim()) {
+      setPerformanceError('Vui lòng nhập thông điệp để đánh giá hiệu suất mã hóa');
+      return;
+    }
+
+    if ((benchmarkType === 'decrypt' || benchmarkType === 'all') && !encryptedMessage) {
+      setPerformanceError('Vui lòng mã hóa thông điệp trước khi đánh giá hiệu suất giải mã');
+      return;
+    }
+
+    setRunningBenchmark(true);
+    setPerformanceError('');
+
+    // Tạo một bản sao của các kết quả hiện tại
+    const newResults = { ...performanceResults };
+
+    // Thực hiện các phép đo tùy thuộc vào loại đánh giá được chọn
+    const runTests = async () => {
+      try {
+        // Đánh giá hiệu suất sinh khóa
+        if (benchmarkType === 'keyGen' || benchmarkType === 'all') {
+          const keyGenResults = measureKeyGeneration(primeP, primeQ, iterations);
+          newResults.keyGen = keyGenResults;
+        }
+
+        // Đánh giá hiệu suất mã hóa
+        if ((benchmarkType === 'encrypt' || benchmarkType === 'all') && message.trim()) {
+          const encryptionResults = measureEncryption(message, keyPair.publicKey, iterations);
+          newResults.encryption = encryptionResults;
+        }
+
+        // Đánh giá hiệu suất giải mã
+        if ((benchmarkType === 'decrypt' || benchmarkType === 'all') && encryptedMessage) {
+          const decryptionResults = measureDecryption(encryptedMessage, keyPair.privateKey, iterations);
+          newResults.decryption = decryptionResults;
+        }
+
+        setPerformanceResults(newResults);
+      } catch (err) {
+        setPerformanceError(`Lỗi khi thực hiện đánh giá hiệu suất: ${err.message}`);
+      } finally {
+        setRunningBenchmark(false);
+      }
+    };
+
+    runTests();
+  };
+
+  // Hàm định dạng thời gian hiển thị
+  const formatTime = (timeMs) => {
+    if (timeMs < 1) {
+      return `${(timeMs * 1000).toFixed(2)} µs`;
+    }
+    return `${timeMs.toFixed(2)} ms`;
   };
 
   return (
@@ -508,6 +582,123 @@ function App() {
                 <p className="value">{decryptedMessage}</p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Performance Evaluation Section - NEW */}
+        <div className="tool-section">
+          <h2>Đánh Giá Hiệu Suất</h2>
+          <div className="tool-content">
+            <h3>Chọn loại đánh giá</h3>
+            <div className="benchmark-options">
+              <select 
+                value={benchmarkType} 
+                onChange={(e) => setBenchmarkType(e.target.value)}
+                className="benchmark-select"
+              >
+                <option value="all">Tất cả</option>
+                <option value="keyGen">Sinh khóa</option>
+                <option value="encrypt">Mã hóa</option>
+                <option value="decrypt">Giải mã</option>
+              </select>
+
+              <div className="iterations-input">
+                <label>Số lần lặp lại:</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="100"
+                  value={iterations} 
+                  onChange={(e) => setIterations(Math.max(1, parseInt(e.target.value) || 1))} 
+                  style={{ color: pError ? 'red' : 'black' }}
+
+                />
+              </div>
+
+              <button 
+                onClick={runPerformanceBenchmark} 
+                disabled={runningBenchmark}
+                className="benchmark-button"
+              >
+                {runningBenchmark ? 'Đang đánh giá...' : 'Chạy đánh giá'}
+              </button>
+            </div>
+
+            {performanceError && <div className="error">{performanceError}</div>}
+
+            {/* Hiển thị kết quả đánh giá hiệu suất */}
+            <div className="performance-results">
+              {/* Kết quả sinh khóa */}
+              {performanceResults.keyGen && (
+                <div className="performance-result-section">
+                  <h3>Kết quả đánh giá hiệu suất sinh khóa</h3>
+                  <div className="performance-card">
+                    <p><strong>Kích thước khóa:</strong> {performanceResults.keyGen.keySize}</p>
+                    <p><strong>Thời gian trung bình:</strong> {formatTime(performanceResults.keyGen.averageTime)}</p>
+                    <p><strong>Thời gian nhanh nhất:</strong> {formatTime(performanceResults.keyGen.minTime)}</p>
+                    <p><strong>Thời gian chậm nhất:</strong> {formatTime(performanceResults.keyGen.maxTime)}</p>
+                    <p><strong>Số lần lặp lại:</strong> {performanceResults.keyGen.iterations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Kết quả mã hóa */}
+              {performanceResults.encryption && (
+                <div className="performance-result-section">
+                  <h3>Kết quả đánh giá hiệu suất mã hóa</h3>
+                  <div className="performance-card">
+                    <p><strong>Độ dài thông điệp:</strong> {performanceResults.encryption.messageLength} ký tự</p>
+                    <p><strong>Kích thước khóa (n):</strong> {performanceResults.encryption.keySize}</p>
+                    <p><strong>Thời gian trung bình:</strong> {formatTime(performanceResults.encryption.averageTime)}</p>
+                    <p><strong>Thời gian nhanh nhất:</strong> {formatTime(performanceResults.encryption.minTime)}</p>
+                    <p><strong>Thời gian chậm nhất:</strong> {formatTime(performanceResults.encryption.maxTime)}</p>
+                    <p><strong>Số lần lặp lại:</strong> {performanceResults.encryption.iterations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Kết quả giải mã */}
+              {performanceResults.decryption && (
+                <div className="performance-result-section">
+                  <h3>Kết quả đánh giá hiệu suất giải mã</h3>
+                  <div className="performance-card">
+                    <p><strong>Độ dài thông điệp mã hóa:</strong> {performanceResults.decryption.messageLength} phần tử</p>
+                    <p><strong>Kích thước khóa (n):</strong> {performanceResults.decryption.keySize}</p>
+                    <p><strong>Thời gian trung bình:</strong> {formatTime(performanceResults.decryption.averageTime)}</p>
+                    <p><strong>Thời gian nhanh nhất:</strong> {formatTime(performanceResults.decryption.minTime)}</p>
+                    <p><strong>Thời gian chậm nhất:</strong> {formatTime(performanceResults.decryption.maxTime)}</p>
+                    <p><strong>Số lần lặp lại:</strong> {performanceResults.decryption.iterations}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* So sánh thời gian (nếu có cả mã hóa và giải mã) */}
+              {performanceResults.encryption && performanceResults.decryption && (
+                <div className="performance-comparison">
+                  <h3>So sánh thời gian mã hóa và giải mã</h3>
+                  <div className="comparison-chart">
+                    <div 
+                      className="chart-bar encrypt-bar" 
+                      style={{ width: `${Math.min(100, performanceResults.encryption.averageTime * 5)}%` }}
+                    >
+                      <span>Mã hóa: {formatTime(performanceResults.encryption.averageTime)}</span>
+                    </div>
+                    <div 
+                      className="chart-bar decrypt-bar" 
+                      style={{ width: `${Math.min(100, performanceResults.decryption.averageTime * 5)}%` }}
+                    >
+                      <span>Giải mã: {formatTime(performanceResults.decryption.averageTime)}</span>
+                    </div>
+                  </div>
+
+                  <p className="performance-note">
+                    <strong>Ghi chú:</strong> Thời gian giải mã thường {performanceResults.decryption.averageTime > performanceResults.encryption.averageTime ? 
+                      `lâu hơn mã hóa khoảng ${(performanceResults.decryption.averageTime / performanceResults.encryption.averageTime).toFixed(1)} lần` : 
+                      'tương đương với mã hóa'} vì số mũ bí mật (d) thường lớn hơn số mũ công khai (e).
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
