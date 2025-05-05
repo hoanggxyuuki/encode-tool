@@ -365,3 +365,254 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* Add these styles to your existing App.css */
+
+.decrypt-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  margin-right: 5px;
+  background-color: #f0f0f0;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px 5px 0 0;
+}
+
+.tab-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.manual-decrypt {
+  width: 100%;
+}
+
+.manual-decrypt textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+/* Add these styles to your existing App.css */
+
+.tool-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.tool-section {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.tool-section h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.tool-content {
+  padding: 10px;
+}
+
+.decrypt-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  margin-right: 5px;
+  background-color: #f0f0f0;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px 5px 0 0;
+}
+
+.tab-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.manual-decrypt {
+  width: 100%;
+}
+
+.manual-decrypt textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+.error {
+  color: #ff0000;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #ffeeee;
+  border-radius: 5px;
+  border-left: 4px solid #ff0000;
+}
+
+.decryption-table {
+  margin: 15px 0;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.decryption-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.decryption-table th, 
+.decryption-table td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.decryption-table th {
+  background-color: #f0f0f0;
+}
+
+.decryption-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.decrypt-step {
+  margin: 20px 0;
+  padding: 15px;
+  border-left: 4px solid #007bff;
+  background-color: #f0f8ff;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #e6f7ff;
+  border-left: 4px solid #1890ff;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+/* Add these styles for the manual key input section */
+
+.key-input-group {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.key-input {
+  display: flex;
+  align-items: center;
+}
+
+.key-input label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.key-input input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 150px;
+}
+
+.manual-decrypt button {
+  margin-top: 15px;
+}
+
+/* Add these styles for the toggle switch */
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 5px;
+  background-color: #f5f5f5;
+  border-radius: 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.toggle-label {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-label.active {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin: 0 10px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #2196F3;
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* You can remove the old tab styling or leave it */

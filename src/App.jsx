@@ -1,21 +1,43 @@
 import { useState } from 'react';
-import { generateKeyPair, encrypt, demonstrationExample, measureKeyGeneration, measureEncryption, compareKeyPerformance } from './dictionary/encrypt';
-import { decrypt, decryptExample } from './dictionary/decrypt';
+import { generateKeyPair, encrypt, demonstrationExample } from './dictionary/encrypt';
+import { decrypt } from './dictionary/decrypt';
 import './App.css';
 
 function App() {
-  const [step, setStep] = useState(1);
+  // Key generation states
   const [primeP, setPrimeP] = useState('');
   const [primeQ, setPrimeQ] = useState('');
   const [keyPair, setKeyPair] = useState(null);
-  const [message, setMessage] = useState('');
-  const [encryptedMessage, setEncryptedMessage] = useState(null);
-  const [decryptedMessage, setDecryptedMessage] = useState('');
-  const [error, setError] = useState('');
-  const [showExample, setShowExample] = useState(false);
-  const [example, setExample] = useState(null);
   const [pError, setPError] = useState('');
   const [qError, setQError] = useState('');
+  
+  // Encryption states
+  const [message, setMessage] = useState('');
+  const [encryptedMessage, setEncryptedMessage] = useState(null);
+  const [encryptError, setEncryptError] = useState('');
+  
+  // Decryption states
+  const [decryptTab, setDecryptTab] = useState('auto');
+  const [manualEncryptedInput, setManualEncryptedInput] = useState('');
+  const [decryptedMessage, setDecryptedMessage] = useState('');
+  const [decryptError, setDecryptError] = useState('');
+  
+  // Decryption step visualization states
+  const [decryptionSteps, setDecryptionSteps] = useState({
+    prepared: false,
+    decryptedChars: [],
+    combined: false,
+    completed: false
+  });
+  
+  // Example states
+  const [showExample, setShowExample] = useState(false);
+  const [example, setExample] = useState(null);
+
+  // Add state for manual key input
+  const [manualKeyN, setManualKeyN] = useState('');
+  const [manualKeyD, setManualKeyD] = useState('');
+  const [manualKeyError, setManualKeyError] = useState('');
 
   const suggestedPrimes = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 
@@ -57,7 +79,6 @@ function App() {
   };
 
   const handleGenerateKeys = () => {
-    setError('');
     if (!validatePrime(primeP, setPError) || !validatePrime(primeQ, setQError)) {
       return;
     }
@@ -65,43 +86,11 @@ function App() {
     try {
       const keys = generateKeyPair(primeP, primeQ);
       setKeyPair(keys);
-      setStep(2);
+      // Clear any previous errors
+      setEncryptError('');
+      setDecryptError('');
     } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleEncrypt = () => {
-    if (!keyPair) {
-      setError('Vui lòng sinh khóa trước');
-      return;
-    }
-    if (!message.trim()) {
-      setError('Vui lòng nhập thông điệp cần mã hóa');
-      return;
-    }
-    try {
-      const encrypted = encrypt(message, keyPair.publicKey);
-      setEncryptedMessage(encrypted);
-      setError('');
-      setStep(3);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleDecrypt = () => {
-    if (!encryptedMessage || !keyPair) {
-      setError('Vui lòng mã hóa thông điệp trước');
-      return;
-    }
-    try {
-      const decrypted = decrypt(encryptedMessage, keyPair.privateKey);
-      setDecryptedMessage(decrypted);
-      setError('');
-      setStep(4);
-    } catch (err) {
-      setError(err.message);
+      setEncryptError(err.message);
     }
   };
 
@@ -113,15 +102,164 @@ function App() {
     setShowExample(true);
   };
 
+  const handleEncrypt = () => {
+    if (!keyPair) {
+      setEncryptError('Vui lòng sinh khóa trước');
+      return;
+    }
+    if (!message.trim()) {
+      setEncryptError('Vui lòng nhập thông điệp cần mã hóa');
+      return;
+    }
+    try {
+      const encrypted = encrypt(message, keyPair.publicKey);
+      setEncryptedMessage(encrypted);
+      setEncryptError('');
+    } catch (err) {
+      setEncryptError(err.message);
+    }
+  };
+
+  const processDecryption = (input, privateKey, setResult, setError) => {
+    try {
+      // Step 1: Prepare private key
+      setDecryptionSteps({
+        prepared: true,
+        decryptedChars: [],
+        combined: false,
+        completed: false
+      });
+      
+      setTimeout(() => {
+        // Step 2: Decrypt each character
+        const decryptedChars = input.map((c) => {
+          let m = 1;
+          for (let i = 0; i < privateKey.d; i++) {
+            m = (m * c) % privateKey.n;
+          }
+          return { 
+            original: c,
+            decrypted: m,
+            char: String.fromCharCode(m)
+          };
+        });
+
+        setDecryptionSteps(prev => ({
+          ...prev,
+          decryptedChars
+        }));
+        
+        setTimeout(() => {
+          // Step 3: Combine characters
+          setDecryptionSteps(prev => ({
+            ...prev,
+            combined: true
+          }));
+          
+          setTimeout(() => {
+            // Step 4: Return final message
+            const decrypted = decrypt(input, privateKey);
+            setResult(decrypted);
+            setDecryptionSteps(prev => ({
+              ...prev,
+              completed: true
+            }));
+            setError('');
+          }, 500);
+        }, 500);
+      }, 500);
+    } catch (err) {
+      setError(err.message);
+      setDecryptionSteps({
+        prepared: false,
+        decryptedChars: [],
+        combined: false,
+        completed: false
+      });
+    }
+  };
+
+  const handleDecryptFromEncrypted = () => {
+    if (!keyPair) {
+      setDecryptError('Vui lòng sinh khóa trước');
+      return;
+    }
+    if (!encryptedMessage || !Array.isArray(encryptedMessage)) {
+      setDecryptError('Không có thông điệp mã hóa để giải mã');
+      return;
+    }
+    
+    processDecryption(encryptedMessage, keyPair.privateKey, setDecryptedMessage, setDecryptError);
+  };
+
+  const handleManualDecrypt = () => {
+    try {
+      // Check if we should use manually entered keys or generated keys
+      let privateKey;
+      if (decryptTab === 'manual' && manualKeyN && manualKeyD) {
+        // Validate manual key inputs
+        const n = parseInt(manualKeyN);
+        const d = parseInt(manualKeyD);
+        
+        if (isNaN(n) || n <= 0) {
+          setManualKeyError('n phải là số nguyên dương');
+          return;
+        }
+        
+        if (isNaN(d) || d <= 0) {
+          setManualKeyError('d phải là số nguyên dương');
+          return;
+        }
+        
+        privateKey = { n, d };
+      } else if (keyPair) {
+        privateKey = keyPair.privateKey;
+      } else {
+        setDecryptError('Vui lòng sinh khóa hoặc nhập khóa bí mật thủ công');
+        return;
+      }
+
+      // Parse the input as JSON array of numbers
+      let parsedInput;
+      try {
+        parsedInput = JSON.parse(manualEncryptedInput);
+        if (!Array.isArray(parsedInput)) {
+          throw new Error();
+        }
+      } catch (e) {
+        setDecryptError('Vui lòng nhập mảng số hợp lệ dưới dạng JSON. Ví dụ: [123, 456, 789]');
+        return;
+      }
+
+      // Reset any previous errors
+      setManualKeyError('');
+      processDecryption(parsedInput, privateKey, setDecryptedMessage, setDecryptError);
+    } catch (err) {
+      setDecryptError(err.message);
+    }
+  };
+
+  const resetDecryption = () => {
+    setDecryptionSteps({
+      prepared: false,
+      decryptedChars: [],
+      combined: false,
+      completed: false
+    });
+    setDecryptedMessage('');
+    setDecryptError('');
+  };
+
   return (
     <div className="container">
       <h1>Mã Hóa RSA</h1>
       
-      <div className="process-steps">
-        <div className={`step ${step >= 1 ? 'active' : ''}`}>
-          <h2>Bước 1: Sinh Khóa</h2>
-          <div className="step-content">
-            <h3>1.1 Chọn hai số nguyên tố p và q</h3>
+      <div className="tool-sections">
+        {/* Key Generation Section */}
+        <div className="tool-section">
+          <h2>Sinh Khóa</h2>
+          <div className="tool-content">
+            <h3>Chọn hai số nguyên tố p và q</h3>
             <div className="input-section">
               <div className="input-group">
                 <div className="input-with-error">
@@ -165,39 +303,40 @@ function App() {
             </div>
 
             {keyPair && (
-              <>
-                <h3>1.2 Tính n = p * q</h3>
+              <div className="key-details">
+                <h3>Tính n = p * q</h3>
                 <p className="value">n = {keyPair.publicKey.n}</p>
 
-                <h3>1.3 Tính hàm Carmichael λ(n)</h3>
+                <h3>Tính hàm Carmichael λ(n)</h3>
                 <p className="value">λ(n) = {keyPair.debug.lambda}</p>
 
-                <h3>1.4 Chọn số mũ công khai (e)</h3>
+                <h3>Chọn số mũ công khai (e)</h3>
                 <p className="value">e = {keyPair.publicKey.e}</p>
 
-                <h3>1.5 Tính số mũ bí mật (d)</h3>
+                <h3>Tính số mũ bí mật (d)</h3>
                 <p className="value">d = {keyPair.privateKey.d}</p>
 
                 <div className="key-result">
                   <div className="public-key">
-                    <h3>1.6 Khóa Công Khai (n, e)</h3>
+                    <h3>Khóa Công Khai (n, e)</h3>
                     <p>n = {keyPair.publicKey.n}</p>
                     <p>e = {keyPair.publicKey.e}</p>
                   </div>
                   <div className="private-key">
-                    <h3>1.7 Khóa Bí Mật (n, d)</h3>
+                    <h3>Khóa Bí Mật (n, d)</h3>
                     <p>n = {keyPair.privateKey.n}</p>
                     <p>d = {keyPair.privateKey.d}</p>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
 
-        <div className={`step ${step >= 2 ? 'active' : ''}`}>
-          <h2>Bước 2: Mã Hóa</h2>
-          <div className="step-content">
+        {/* Encryption Section */}
+        <div className="tool-section">
+          <h2>Mã Hóa</h2>
+          <div className="tool-content">
             <h3>Nhập thông điệp cần mã hóa</h3>
             <div className="input-group">
               <textarea
@@ -206,7 +345,7 @@ function App() {
                 onChange={(e) => setMessage(e.target.value)}
                 style={{ color: pError ? 'red' : 'black' }}
               />
-              <button onClick={handleEncrypt}>Mã Hóa</button>
+              <button onClick={handleEncrypt} disabled={!keyPair}>Mã Hóa</button>
             </div>
             {encryptedMessage && (
               <div className="result">
@@ -214,14 +353,154 @@ function App() {
                 <p className="value">{JSON.stringify(encryptedMessage)}</p>
               </div>
             )}
+            {encryptError && <div className="error">{encryptError}</div>}
           </div>
         </div>
 
-        <div className={`step ${step >= 3 ? 'active' : ''}`}>
-          <h2>Bước 3: Giải Mã</h2>
-          <div className="step-content">
-            <button onClick={handleDecrypt}>Giải Mã</button>
-            {decryptedMessage && (
+        {/* Decryption Section */}
+        <div className="tool-section">
+          <h2>Giải Mã</h2>
+          <div className="tool-content">
+            {/* Replace tab buttons with toggle switch */}
+            <div className="toggle-container">
+              <span className={`toggle-label ${decryptTab === 'auto' ? 'active' : ''}`}>
+                Từ kết quả mã hóa
+              </span>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={decryptTab === 'manual'} 
+                  onChange={() => {
+                    setDecryptTab(decryptTab === 'auto' ? 'manual' : 'auto');
+                    resetDecryption();
+                  }}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className={`toggle-label ${decryptTab === 'manual' ? 'active' : ''}`}>
+                Nhập thủ công
+              </span>
+            </div>
+
+            {decryptTab === 'auto' && (
+              <div className="auto-decrypt">
+                <button 
+                  onClick={handleDecryptFromEncrypted} 
+                  disabled={!keyPair || !encryptedMessage || decryptionSteps.prepared}
+                >
+                  Giải Mã
+                </button>
+              </div>
+            )}
+
+            {decryptTab === 'manual' && (
+              <div className="manual-decrypt">
+                <h3>Nhập thông điệp đã mã hóa</h3>
+                <div className="input-group">
+                  <textarea
+                    placeholder='Nhập dạng mảng số. Ví dụ: [123, 456, 789]'
+                    value={manualEncryptedInput}
+                    onChange={(e) => setManualEncryptedInput(e.target.value)}
+                    style={{ color: pError ? 'red' : 'black' }}
+                  />
+                </div>
+                
+                <h3>Nhập khóa bí mật (hoặc sử dụng khóa đã sinh)</h3>
+                <div className="key-input-group">
+                  <div className="key-input">
+                    <label>n:</label>
+                    <input 
+                      type="number" 
+                      placeholder="Nhập n" 
+                      value={manualKeyN}
+                      onChange={(e) => setManualKeyN(e.target.value)}
+                      style={{ color: pError ? 'red' : 'black' }}
+                    />
+                  </div>
+                  <div className="key-input">
+                    <label>d:</label>
+                    <input 
+                      type="number" 
+                      placeholder="Nhập d" 
+                      value={manualKeyD}
+                      onChange={(e) => setManualKeyD(e.target.value)}
+                      style={{ color: pError ? 'red' : 'black' }}
+                    />
+                  </div>
+                </div>
+                
+                {manualKeyError && <div className="error">{manualKeyError}</div>}
+                
+                <button 
+                  onClick={handleManualDecrypt}
+                  disabled={decryptionSteps.prepared || (!manualEncryptedInput)}
+                >
+                  Giải Mã
+                </button>
+              </div>
+            )}
+            
+            {decryptError && (
+              <div className="error">{decryptError}</div>
+            )}
+            
+            {/* Display decryption steps */}
+            {decryptionSteps.prepared && (
+              <div className="decryption-steps">
+                <h3>Bước 1: Chuẩn bị khóa bí mật</h3>
+                <div className="key-details">
+                  <p>d = {keyPair?.privateKey.d}</p>
+                  <p>n = {keyPair?.privateKey.n}</p>
+                </div>
+                
+                {decryptionSteps.decryptedChars.length > 0 && (
+                  <div className="decrypt-step">
+                    <h3>Bước 2: Giải mã từng phần của thông điệp</h3>
+                    <div className="decryption-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Mã đã mã hóa (c)</th>
+                            <th>Giá trị giải mã (m)</th>
+                            <th>Ký tự</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {decryptionSteps.decryptedChars.map((item, i) => (
+                            <tr key={i}>
+                              <td>{item.original}</td>
+                              <td>{item.decrypted}</td>
+                              <td>{item.char}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {decryptionSteps.combined && (
+                  <div className="decrypt-step">
+                    <h3>Bước 3: Kết hợp các ký tự đã giải mã</h3>
+                    <p>
+                      Kết hợp các ký tự: {decryptionSteps.decryptedChars.map(c => c.char).join('')}
+                    </p>
+                  </div>
+                )}
+                
+                {decryptionSteps.completed && (
+                  <div className="decrypt-step">
+                    <h3>Bước 4: Thông điệp đã giải mã hoàn chỉnh</h3>
+                    <div className="result">
+                      <p className="value">{decryptedMessage}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* If already decrypted but not showing steps */}
+            {!decryptionSteps.prepared && decryptedMessage && (
               <div className="result">
                 <h3>Thông Điệp Đã Giải Mã</h3>
                 <p className="value">{decryptedMessage}</p>
@@ -231,6 +510,7 @@ function App() {
         </div>
       </div>
 
+      {/* Example Section */}
       <div className="example-section">
         <h2>Ví Dụ Minh Họa</h2>
         <button onClick={loadExample} className="example-button">
@@ -255,8 +535,6 @@ function App() {
           </div>
         )}
       </div>
-
-      {error && <div className="error">{error}</div>}
     </div>
   );
 }
